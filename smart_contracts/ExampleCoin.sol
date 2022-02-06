@@ -1,6 +1,6 @@
 pragma solidity >=0.8.0 <0.9.0;
 
-// hahaha this is all so stupid
+// It's basic, but it really works!
 
 import "hardhat/console.sol";
 
@@ -12,21 +12,22 @@ contract ExampleCoin {
    event Sent(address from, address to, uint amount);
 
    constructor() public {
+      console.log(msg.sender);
       minter = msg.sender;
       }
 
-   function mint(address rcvr, uint amount) public {
+   function mint(address receiver, uint amount) public {
       // require(msg.sender == minter);
-      console.log("Receiving Address for mint: ", rcvr);
+      console.log("Receiving Address for mint: ", receiver);
       console.log("Amount minted: ", amount);
 
-      balances[rcvr] += amount;
+      balances[receiver] += amount;
    }
 
-  //  function send(address received, uint amount) public {
-  //     require(amount <= balances[msg.sender], "Insufficient balance.");
-  //     balances[msg.sender] -= amount;
-  //     balances[rcvr] += amount;
-  //     emit Sent(msg.sender, rcvr, amount);
-  //  }
+   function send(address receiver, uint amount) public {
+      require(amount <= balances[msg.sender], "Insufficient balance.");
+      balances[msg.sender] -= amount;
+      balances[receiver] += amount;
+      emit Sent(msg.sender, receiver, amount);
+   }
 }
