@@ -8,4 +8,9 @@ I am deeply skeptical of crypto, and the tech underlying crypto. But I want to b
 
 `yarn start` to run the script in index.js
 
+# Handle eth
+
+Use the scaffold faucet to send eth to 0xcbc4efe8CCf05a9435089e2F8F68622abBb7642e
+in order to have funds to interact with the smart contract.
+
 

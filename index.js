@@ -9,16 +9,18 @@ const secrets = require('./the_poop.json');
 const init = async () => {
   console.log('Initializing connection to Ethereum blockchain...\n');
   // givenProvider would be metamask etc. in a browser
+  // connecting via websocket seemed to be failing to listen to events. Trying on http... at random SO suggestion...
   const web3 = new Web3(Web3.givenProvider || "ws://127.0.0.1:8545");
+  // const web3 = new Web3("http://localhost:8545")
   // be more explicity about websocket??
-  web3.setProvider(new Web3.providers.WebsocketProvider('ws://127.0.0.1:8545'));
+  // web3.setProvider(new Web3.providers.WebsocketProvider('ws://127.0.0.1:8545'));
 
   // create a new account to interact with the contract
   // const freshAccount = web3.eth.accounts.create();
   const freshAccount = web3.eth.accounts.privateKeyToAccount(secrets.privateKey);
   // Can send eth to this address via the local faucet
   console.log(`Private Key: ${freshAccount.privateKey}\nAddress: ${freshAccount.address}`);
-  console.log(freshAccount);
+  // console.log(freshAccount);
 
   // need to do this to make the chain aware of the account, or... something?
   web3.eth.accounts.wallet.add(freshAccount.privateKey);
@@ -38,23 +40,28 @@ const init = async () => {
     '0x5fbdb2315678afecb367f032d93f642f64180aa3' // the deployed contract's address
   );
 
-  console.log(connectedContract.methods);
-  console.log(connectedContract.events);
+  // console.log(connectedContract.methods);
+  // console.log(connectedContract.events);
 
   // connectedContract.events.GuessReceived()
-  connectedContract.events.allEvents((e) => { console.log('called back!') })
-    // .on("connected", function(subscriptionId){
-    //   console.log('connected to event listener', subscriptionId);
-    // })
-    // .on('data', function(event){
-    //   console.log('DATA CALLBACK: ', event); // same results as the optional callback above
-    // })
-    // .on('changed', function(event){
-    //   console.log('?changed?');
-    // })
-    // .on('error', function(error, receipt) { // If the transaction was rejected by the network with a receipt, the second parameter will be the receipt.
-    //  console.log('on error');
-    // });
+  // connectedContract.events.allEvents((e) => { console.log('called back!', e) })
+
+  // TODO ERIC: Stop here, seems that websocket subscriptions don't work until hardhat v 2.6.1
+  // and scaffold eth comes with v 2.6.0
+
+  connectedContract.events.allEvents()
+    .on("connected", function(subscriptionId){
+      console.log('\nconnected to event listener', subscriptionId);
+    })
+    .on('data', function(event){
+      console.log('DATA CALLBACK: ', event); // same results as the optional callback above
+    })
+    .on('changed', function(event){
+      console.log('?changed?');
+    })
+    .on('error', function(error, receipt) { // If the transaction was rejected by the network with a receipt, the second parameter will be the receipt.
+     console.log('on error');
+    });
 
 
 
