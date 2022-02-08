@@ -1,0 +1,16 @@
+{
+  "name": "eth-smartcontract-shame",
+  "version": "0.0.1",
+  "description": "A shameful test bed for smart contract coding",
+  "main": "index.js",
+  "repository": "https://github.com/eqmvii/eth-smartcontract-shame.git",
+  "author": "Eric Mancini <eqmvii@gmail.com>",
+  "license": "MIT",
+  "private": false,
+  "dependencies": {
+    "web3": "^1.7.0"
+  },
+  "scripts": {
+    "start": "node index.js"
+  }
+}
