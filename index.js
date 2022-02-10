@@ -2,7 +2,7 @@ const Web3 = require('web3');
 const CursedWordV1 = require('./build/contracts/CursedWordV1.json');
 const secrets = require('./the_poop.json');
 
-const THE_SECRET_WORD = "jelly";
+const THE_SECRET_WORD = "smile";
 const SEND_DEBUG_GUESS = false;
 
 
@@ -57,7 +57,7 @@ const init = async () => {
         from: freshAccount.address,
         // gasPrice (optional - gas price in wei),
         // gas (optional - max gas limit)
-        gas: 250_000, // TODO make sane
+        gas: 250_000, // TODO make sane idk
         value: 0, // value to xfer in wei
         // nonce (optional)
       });
@@ -78,10 +78,10 @@ const init = async () => {
     });
 
 
-  // setInterval(() => {
-  //   console.log(`Current Balance `);
-  //   web3.eth.getBalance(freshAccount.address).then(console.log);
-  // }, 1 * 5000);
+  setInterval(() => {
+    console.log(`Current Balance `);
+    web3.eth.getBalance(freshAccount.address).then(console.log);
+  }, 1 * 5000);
 
   const accounts = await web3.eth.getAccounts();
   console.dir(accounts);
