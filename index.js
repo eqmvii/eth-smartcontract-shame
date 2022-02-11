@@ -2,9 +2,12 @@ const Web3 = require('web3');
 const CursedWordV1 = require('./build/contracts/CursedWordV1.json');
 const secrets = require('./the_poop.json');
 
-const THE_SECRET_WORD = "smile";
+const THE_SECRET_WORD = "great";
 const SEND_DEBUG_GUESS = false;
 
+const guessesRespondedTo = [];
+
+const DEPLOYED_CONTRACT_ADDRESS = '0x5FbDB2315678afecb367f032d93F642f64180aa3';
 
 // ==== TEST public keys
 // Fresh account address: 0xcbc4efe8CCf05a9435089e2F8F68622abBb7642e
@@ -29,59 +32,94 @@ const init = async () => {
   // const accounts = await web3.eth.getAccounts();
   // console.dir(accounts);
 
-  const connectedContract = new web3.eth.Contract(
-    CursedWordV1.abi,
-    // Must update each time contract is deployed!
-    '0x5FbDB2315678afecb367f032d93F642f64180aa3' // the deployed contract's address
-  );
+  const connectedContract = new web3.eth.Contract(CursedWordV1.abi, DEPLOYED_CONTRACT_ADDRESS);
 
   console.log(connectedContract.methods);
   // console.log(connectedContract.events);
 
 
-  connectedContract.events.GuessReceived()
-    .on("connected", function(subscriptionId){
-      console.log('\nConnected to event listener', subscriptionId);
-    })
-    .on('data', function(event){
-      // console.log('DATA CALLBACK: ', event); // same results as the optional callback above
-      // TODO: ensure is correct event
-      const guessedWord = web3.utils.hexToUtf8(event.returnValues.wordGuessed);
-      console.log('data callback ', event.returnValues.wordGuessed);
-      console.log(`is ${guessedWord} the secret word? ${guessedWord == THE_SECRET_WORD}`);
-      const responseCode = cursedWordGuessResponse(guessedWord);
+  // connectedContract.events.GuessReceived()
+  //   .on("connected", function(subscriptionId){
+  //     console.log('\nConnected to event listener', subscriptionId);
+  //   })
+  //   .on('data', function(event){
+  //     // console.log('DATA CALLBACK: ', event); // same results as the optional callback above
+  //     // TODO: ensure is correct event
+  //     const guessedWord = web3.utils.hexToUtf8(event.returnValues.wordGuessed);
+  //     console.log('data callback ', event.returnValues.wordGuessed);
+  //     console.log(`is ${guessedWord} the secret word? ${guessedWord == THE_SECRET_WORD}`);
+  //     const responseCode = cursedWordGuessResponse(guessedWord);
 
-      // Send guess data back to the contract
+  //     // Send guess data back to the contract
 
-      connectedContract.methods.respond_to_guess(event.returnValues.guesser, event.returnValues.wordGuessed, responseCode).send({
-        from: freshAccount.address,
-        // gasPrice (optional - gas price in wei),
-        // gas (optional - max gas limit)
-        gas: 250_000, // TODO make sane idk
-        value: 0, // value to xfer in wei
-        // nonce (optional)
+  //     connectedContract.methods.respond_to_guess(event.returnValues.guesser, event.returnValues.wordGuessed, responseCode).send({
+  //       from: freshAccount.address,
+  //       // gasPrice (optional - gas price in wei),
+  //       // gas (optional - max gas limit)
+  //       gas: 250_000, // TODO make sane idk
+  //       value: 0, // value to xfer in wei
+  //       // nonce (optional)
+  //     });
+
+
+  //     // returnValues: Result {
+  //     //   '0': '0xcbc4efe8CCf05a9435089e2F8F68622abBb7642e',
+  //     //   '1': '0x626c7565',
+  //     //   guesser: '0xcbc4efe8CCf05a9435089e2F8F68622abBb7642e',
+  //     //   wordGuessed: '0x626c7565'
+  //     // },
+  //   })
+  //   .on('changed', function(event){
+  //     console.log('?changed?');
+  //   })
+  //   .on('error', function(error, receipt) { // If the transaction was rejected by the network with a receipt, the second parameter will be the receipt.
+  //    console.log('Event On Error');
+  //   });
+
+  // New Architecture: Oracle runs its own interval checking for logs, instead of relying on WebSockets.
+
+  setInterval(() => {
+    web3.eth.getBalance(freshAccount.address).then((balance) => {
+      console.log(`${Date.now()} Current Balance: ${balance}`);
+    });
+
+    // hard coded filter for word number for now
+    connectedContract.getPastEvents('GuessReceived', { fromBlock: 0, filter: { wordNumber: 1 } }).then((events) =>
+    {
+      // console.log(events[0].returnValues);
+      events.forEach(event => {
+        console.log(`${event.returnValues.guessNumber}: ${web3.utils.hexToUtf8(event.returnValues.wordGuessed)}`);
+
+        // TODO: sort by guess number? Can we rely on that ordering by default?
+
+        // Respond to any new events
+        if (!guessesRespondedTo.includes(event.returnValues.guessNumber)) {
+          const guessedWord = web3.utils.hexToUtf8(event.returnValues.wordGuessed);
+          console.log('data callback ', event.returnValues.wordGuessed);
+          console.log(`is ${guessedWord} the secret word? ${guessedWord == THE_SECRET_WORD}`);
+          const responseCode = cursedWordGuessResponse(guessedWord);
+
+          connectedContract.methods.respond_to_guess(event.returnValues.guessNumber, event.returnValues.guesser, event.returnValues.wordGuessed, responseCode).send({
+            from: freshAccount.address,
+            // gasPrice (optional - gas price in wei),
+            // gas (optional - max gas limit)
+            gas: 250_000, // TODO make sane idk
+            value: 0, // value to xfer in wei
+            // nonce (optional)
+          });
+
+          guessesRespondedTo.push(event.returnValues.guessNumber);
+        }
       });
 
 
-      // returnValues: Result {
-      //   '0': '0xcbc4efe8CCf05a9435089e2F8F68622abBb7642e',
-      //   '1': '0x626c7565',
-      //   guesser: '0xcbc4efe8CCf05a9435089e2F8F68622abBb7642e',
-      //   wordGuessed: '0x626c7565'
-      // },
-    })
-    .on('changed', function(event){
-      console.log('?changed?');
-    })
-    .on('error', function(error, receipt) { // If the transaction was rejected by the network with a receipt, the second parameter will be the receipt.
-     console.log('Event On Error');
+      // wordNumber: '1',
+      // guessNumber: '1',
+      // guesser: '0x1f4e1c2DD25C0bD668ABC018370780009186fC6d',
+      // wordGuessed: '0x627261696e'
     });
 
-
-  setInterval(() => {
-    console.log(`Current Balance `);
-    web3.eth.getBalance(freshAccount.address).then(console.log);
-  }, 1 * 5000);
+  }, 1 * 1000);
 
   const accounts = await web3.eth.getAccounts();
   console.dir(accounts);
@@ -147,9 +185,9 @@ function cursedWordGuessResponse(guess) {
 
   // record "2" for letters in the word but in the wrong place
   for (let i = 0; i < guess.length; i++) {
-    console.log(`i: ${i} -- ${remainingLetters.join("")}`);
+    // console.log(`i: ${i} -- ${remainingLetters.join("")}`);
     if (responseArray[i] !== "3" && remainingLetters.indexOf(guess[i]) >= 0) {
-      console.log('A hit at index ' + remainingLetters.indexOf(guess[i]));
+      // console.log('A hit at index ' + remainingLetters.indexOf(guess[i]));
       responseArray[i] = "2";
       // remove this letter from the remaining letters array
       // splice(start, deleteCount)
