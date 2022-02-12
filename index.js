@@ -2,12 +2,12 @@ const Web3 = require('web3');
 const CursedWordV1 = require('./build/contracts/CursedWordV1.json');
 const secrets = require('./the_poop.json');
 
-const THE_SECRET_WORD = "great";
+const THE_SECRET_WORD = "TREAT";
 const SEND_DEBUG_GUESS = false;
 
 const guessesRespondedTo = [];
 
-const DEPLOYED_CONTRACT_ADDRESS = '0x5FbDB2315678afecb367f032d93F642f64180aa3';
+const DEPLOYED_CONTRACT_ADDRESS = '0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9';
 
 // ==== TEST public keys
 // Fresh account address: 0xcbc4efe8CCf05a9435089e2F8F68622abBb7642e
